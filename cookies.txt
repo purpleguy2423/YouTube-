@@ -1,0 +1,9 @@
+# HTTP Cookie File for YouTube
+# This is a dummy cookies file that might help with certain requests
+# Format: domain name, flag, path, secure_connection_flag, expiration, name, value
+
+.youtube.com	TRUE	/	FALSE	1798751192	CONSENT	YES+cb
+.youtube.com	TRUE	/	FALSE	1798751192	VISITOR_INFO1_LIVE	q1gDxVIyC8M
+.youtube.com	TRUE	/	FALSE	1798751192	GPS	1
+.youtube.com	TRUE	/	FALSE	1798751192	YSC	w5tGMq3agYM
+.youtube.com	TRUE	/	TRUE	1798751192	PREF	f6=40000000&tz=UTC
