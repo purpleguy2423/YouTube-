@@ -1,7 +1,7 @@
-modules = ["python-3.11"]
+modules = ["web", "python-3.11", "nodejs-20", "nix"]
 
 [nix]
-channel = "stable-24_05"
+channel = "stable-25_05"
 
 [deployment]
 deploymentTarget = "autoscale"
@@ -37,3 +37,6 @@ waitForPort = 5000
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[agent]
+expertMode = true
