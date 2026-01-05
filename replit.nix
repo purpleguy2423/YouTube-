@@ -1,7 +1,28 @@
 {pkgs}: {
   deps = [
-    pkgs.python313Packages.sqlalchemy_1_4
+    pkgs.python312Packages.types-urllib3
+    pkgs.python313Packages.types-urllib3
+    pkgs.kodiPackages.urllib3
+    pkgs.python313Packages.urllib3
+    pkgs.python312Packages.urllib3
+    pkgs.python312Packages.wtforms-sqlalchemy
+    pkgs.python312Packages.flask-mysqldb
+    pkgs.python312Packages.oauthlib
+    pkgs.python313Packages.oauthlib
+    pkgs.python312Packages.wtforms-bootstrap5
+    pkgs.python313Packages.wtforms-bootstrap5
+    pkgs.python313Packages.flask-wtf
+    pkgs.python312Packages.flask-wtf
+    pkgs.python312Packages.flask-login
+    pkgs.python313Packages.flask-login
+    pkgs.python313Packages.wtforms-sqlalchemy
+    pkgs.python312Packages.wtforms
+    pkgs.python313Packages.wtforms
+    pkgs.python313Packages.oauth2
     pkgs.python312Packages.flask
+    pkgs.python313Packages.flask
+    pkgs.python313Packages.flask-sqlalchemy
+    pkgs.python313Packages.sqlalchemy_1_4
     pkgs.yt-dlp
     pkgs.postgresql
     pkgs.openssl

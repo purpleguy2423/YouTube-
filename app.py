@@ -1,6 +1,7 @@
 import os
 import logging
 from flask import Flask, render_template, request, jsonify, send_from_directory, redirect, url_for, flash
+from werkzeug.middleware.proxy_fix import ProxyFix
 from youtube_service import YouTubeService
 from download_service import DownloadService
 from cache import Cache
@@ -10,16 +11,16 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError
-import json
 import requests
-from oauthlib.oauth2 import WebApplicationClient
+
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "youtube_proxy_secret_key")
+app.secret_key = os.environ.get("SESSION_SECRET")
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Database configuration
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
@@ -469,3 +470,4 @@ def delete_video(user_video_id):
 @app.errorhandler(500)
 def internal_error(error):
     return render_template('error.html', error="Internal server error"), 500
+

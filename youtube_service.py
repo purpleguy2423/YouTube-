@@ -1,8 +1,8 @@
 import requests
-from urllib.parse import parse_qs, urlparse
+
 import logging
 import re
-from datetime import datetime, timedelta
+
 
 logger = logging.getLogger(__name__)
 
