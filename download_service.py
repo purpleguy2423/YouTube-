@@ -82,10 +82,11 @@ class DownloadService:
             output_template = os.path.join(self.download_folder, '%(title)s-%(id)s.%(ext)s')
             
             ydl_opts = {
-                'format': f"{itag}+bestaudio/best",
+                'format': f"{itag}/best",
                 'outtmpl': output_template,
                 'quiet': True,
-                'merge_output_format': 'mp4'
+                'merge_output_format': 'mp4',
+                'noplaylist': True
             }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:

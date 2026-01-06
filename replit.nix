@@ -1,5 +1,7 @@
 {pkgs}: {
   deps = [
+    pkgs.deno
+    pkgs.ffmpeg
     pkgs.python312Packages.types-urllib3
     pkgs.python313Packages.types-urllib3
     pkgs.kodiPackages.urllib3
