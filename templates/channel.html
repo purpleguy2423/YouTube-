@@ -275,8 +275,8 @@ function openDownloadModal(videoId) {
                         videoStreamsHTML = data.video_streams.map(stream => `
                             <button type="button" 
                                     class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
-                                    onclick="channelDownloadStream('${videoId}', ${stream.itag})">
-                                ${stream.resolution} (${stream.mime_type.split('/')[1]})
+                                    onclick="channelDownloadStream('${videoId}', '${stream.itag}')">
+                                ${stream.format_name} (${stream.mime_type})
                                 <span class="badge bg-primary rounded-pill">${stream.size_mb} MB</span>
                             </button>
                         `).join('');
@@ -294,8 +294,8 @@ function openDownloadModal(videoId) {
                         audioStreamsHTML = data.audio_streams.map(stream => `
                             <button type="button" 
                                     class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
-                                    onclick="channelDownloadStream('${videoId}', ${stream.itag})">
-                                ${stream.abr} (${stream.mime_type.split('/')[1]})
+                                    onclick="channelDownloadStream('${videoId}', '${stream.itag}')">
+                                ${stream.format_name} (${stream.mime_type})
                                 <span class="badge bg-primary rounded-pill">${stream.size_mb} MB</span>
                             </button>
                         `).join('');
