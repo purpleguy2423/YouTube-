@@ -199,7 +199,7 @@ def download_video(video_id):
         # Try multiple methods in sequence until one works
         
         # Method 1: Try standard itag-based download
-        result = download_service.download_video(video_id, int(itag))
+        result = download_service.download_video(video_id, itag)
         
         if not result['success'] or 'thumbnail' in result.get('file_path', '').lower():
             # Method 2: Direct download with best quality
