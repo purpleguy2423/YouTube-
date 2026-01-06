@@ -1,12 +1,12 @@
 import logging
 import os
-import youtube_dl
+import yt_dlp
 from typing import Dict
 
 logger = logging.getLogger(__name__)
 
 class DownloadService:
-    """Service for downloading YouTube videos using youtube-dl"""
+    """Service for downloading YouTube videos using yt-dlp"""
     
     def __init__(self):
         self.download_folder = os.path.join(os.getcwd(), 'static', 'downloads')
@@ -14,14 +14,15 @@ class DownloadService:
             os.makedirs(self.download_folder)
     
     def get_available_streams(self, video_id: str) -> Dict:
-        """Get video info using youtube-dl"""
+        """Get video info using yt-dlp"""
         try:
             ydl_opts = {
                 'quiet': True,
                 'no_warnings': True,
+                'extract_flat': False,
             }
             url = f"https://www.youtube.com/watch?v={video_id}"
-            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
                 
                 video_streams = []
@@ -49,7 +50,7 @@ class DownloadService:
                     'thumbnail': info.get('thumbnail'),
                     'length': info.get('duration'),
                     'author': info.get('uploader'),
-                    'video_streams': video_streams[:5], # Limit for UI
+                    'video_streams': video_streams[:5],
                     'audio_streams': audio_streams[:5]
                 }
         except Exception as e:
@@ -57,7 +58,7 @@ class DownloadService:
             return {'success': False, 'error': str(e)}
 
     def download_video(self, video_id: str, itag: str) -> Dict:
-        """Download video using youtube-dl"""
+        """Download video using yt-dlp"""
         try:
             url = f"https://www.youtube.com/watch?v={video_id}"
             output_template = os.path.join(self.download_folder, '%(title)s-%(id)s.%(ext)s')
@@ -68,7 +69,7 @@ class DownloadService:
                 'quiet': True,
             }
             
-            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
                 filename = ydl.prepare_filename(info)
                 
