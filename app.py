@@ -211,7 +211,7 @@ def download_video(video_id):
             logger.warning(f"Direct download failed for {video_id}, trying format-specific download")
             
             # Choose format based on requested itag
-            if int(itag) in [22, 18]:  # Video formats
+            if itag in ['22', '18']:  # Video formats
                 format_code = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
             else:  # Audio formats
                 format_code = 'bestaudio[ext=m4a]/bestaudio/best'
