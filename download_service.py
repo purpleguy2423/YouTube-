@@ -2,12 +2,13 @@ import logging
 import os
 import yt_dlp
 import requests
+from pytubefix import YouTube
 from typing import Dict
 
 logger = logging.getLogger(__name__)
 
 class DownloadService:
-    """Service for downloading YouTube videos using yt-dlp with maximum bypass capabilities"""
+    """Service for downloading YouTube videos using multiple libraries for maximum reliability"""
     
     def __init__(self):
         self.download_folder = os.path.join(os.getcwd(), 'static', 'downloads')
@@ -15,7 +16,6 @@ class DownloadService:
             os.makedirs(self.download_folder)
         
         self.cookies_path = os.path.join(os.getcwd(), 'cookies.txt')
-        # Create an empty cookies file if it doesn't exist
         if not os.path.exists(self.cookies_path):
             with open(self.cookies_path, 'w') as f:
                 f.write("# Netscape HTTP Cookie File\n")
@@ -51,7 +51,7 @@ class DownloadService:
                         height = f.get('height')
                         resolution = f"{height}p" if height else "unknown"
                         video_streams.append({
-                            'itag': f.get('format_id'),
+                            'itag': str(f.get('format_id')),
                             'resolution': resolution,
                             'mime_type': f.get('ext') or 'unknown',
                             'size_mb': filesize_mb,
@@ -61,13 +61,14 @@ class DownloadService:
                         abr = f.get('abr')
                         bitrate = f"{int(abr)}kbps" if abr else "unknown"
                         audio_streams.append({
-                            'itag': f.get('format_id'),
+                            'itag': str(f.get('format_id')),
                             'abr': bitrate,
                             'mime_type': f.get('ext') or 'unknown',
                             'size_mb': filesize_mb,
                             'format_name': f"{f.get('format_note') or 'Audio'} ({bitrate})"
                         })
 
+                # Fix sorting
                 video_streams.sort(key=lambda x: int(x['resolution'].replace('p', '')) if x['resolution'].replace('p', '').isdigit() else 0, reverse=True)
                 audio_streams.sort(key=lambda x: int(x['abr'].replace('kbps', '')) if x['abr'].replace('kbps', '').isdigit() else 0, reverse=True)
 
@@ -82,42 +83,61 @@ class DownloadService:
                 }
         except Exception as e:
             logger.error(f"Error getting info for {video_id}: {str(e)}")
-            return {'success': False, 'error': str(e)}
+            # Fallback to pytubefix for metadata if yt-dlp fails
+            try:
+                url = f"https://www.youtube.com/watch?v={video_id}"
+                yt = YouTube(url)
+                return {
+                    'success': True,
+                    'title': yt.title,
+                    'thumbnail': yt.thumbnail_url,
+                    'length': yt.length,
+                    'author': yt.author,
+                    'video_streams': [{'itag': str(s.itag), 'resolution': s.resolution, 'mime_type': s.mime_type, 'size_mb': 'unknown', 'format_name': f"Video ({s.resolution})"} for s in yt.streams.filter(progressive=True)],
+                    'audio_streams': [{'itag': str(s.itag), 'abr': s.abr, 'mime_type': s.mime_type, 'size_mb': 'unknown', 'format_name': f"Audio ({s.abr})"} for s in yt.streams.filter(only_audio=True)]
+                }
+            except:
+                return {'success': False, 'error': str(e)}
 
     def download_video(self, video_id: str, itag: str) -> Dict:
-        """Force download using multiple bypass strategies"""
-        try:
-            url = f"https://www.youtube.com/watch?v={video_id}"
-            output_template = os.path.join(self.download_folder, '%(title)s-%(id)s.%(ext)s')
+        """Attempt download using yt-dlp, falling back to pytubefix if needed"""
+        url = f"https://www.youtube.com/watch?v={video_id}"
+        
+        # Try yt-dlp first
+        result = self._download_with_ytdlp(video_id, itag, url)
+        if result['success']:
+            return result
             
-            # Primary strategy: Specific format with fallback
+        # Fallback to pytubefix
+        logger.warning(f"yt-dlp failed for {video_id}, trying pytubefix")
+        result = self._download_with_pytubefix(video_id, itag, url)
+        if result['success']:
+            return result
+            
+        # Emergency fallback
+        return self._emergency_fallback_download(video_id)
+
+    def _download_with_ytdlp(self, video_id: str, itag: str, url: str) -> Dict:
+        try:
+            output_template = os.path.join(self.download_folder, '%(title)s-%(id)s.%(ext)s')
             ydl_opts = {
                 'format': f"{itag}/bestvideo+bestaudio/best",
                 'outtmpl': output_template,
-                'quiet': False,
-                'no_warnings': False,
+                'quiet': True,
+                'no_warnings': True,
                 'merge_output_format': 'mp4',
                 'noplaylist': True,
                 'cookiefile': self.cookies_path if os.path.exists(self.cookies_path) else None,
                 'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'nocheckcertificate': True,
                 'ignoreerrors': True,
-                'external_downloader': 'aria2c' if os.path.exists('/usr/bin/aria2c') else None,
-                'http_headers': {
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                    'Accept-Language': 'en-us,en;q=0.5',
-                    'Sec-Fetch-Mode': 'navigate',
-                }
             }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
-                if not info:
-                    raise Exception("Failed to extract info or download")
+                if not info: return {'success': False}
                 
                 filename = ydl.prepare_filename(info)
-                
-                # Check for processed files (merging often changes extensions)
                 if not os.path.exists(filename):
                     base = filename.rsplit('.', 1)[0]
                     for ext in ['mp4', 'mkv', 'webm', 'm4a']:
@@ -125,44 +145,56 @@ class DownloadService:
                             filename = f"{base}.{ext}"
                             break
                 
-                if not os.path.exists(filename):
-                    # Fallback to searching for the file with the video ID in the name
-                    files = [f for f in os.listdir(self.download_folder) if video_id in f]
-                    if files:
-                        filename = os.path.join(self.download_folder, files[0])
-                    else:
-                        raise Exception("Downloaded file not found on disk")
-                
-                return {
-                    'success': True,
-                    'title': info.get('title'),
-                    'file_path': os.path.relpath(filename, os.getcwd()),
-                    'file_size': round(os.path.getsize(filename) / (1024 * 1024), 2),
-                    'mime_type': filename.rsplit('.', 1)[-1]
-                }
+                if os.path.exists(filename):
+                    return {
+                        'success': True,
+                        'title': info.get('title'),
+                        'file_path': os.path.relpath(filename, os.getcwd()),
+                        'file_size': round(os.path.getsize(filename) / (1024 * 1024), 2),
+                        'mime_type': filename.rsplit('.', 1)[-1]
+                    }
+            return {'success': False}
         except Exception as e:
-            logger.error(f"Download failed for {video_id}: {str(e)}")
-            # Last ditch effort: Try downloading just the best combined format with no extra bells and whistles
-            return self._emergency_fallback_download(video_id)
+            logger.error(f"yt-dlp error: {str(e)}")
+            return {'success': False}
+
+    def _download_with_pytubefix(self, video_id: str, itag: str, url: str) -> Dict:
+        try:
+            yt = YouTube(url)
+            # Try specific itag, then highest res
+            stream = None
+            if itag and itag.isdigit():
+                stream = yt.streams.get_by_id(int(itag))
+            if not stream:
+                stream = yt.streams.get_highest_resolution()
+            
+            if not stream: return {'success': False}
+            
+            # Use fixed filename to avoid issues with special characters
+            target_filename = f"{video_id}_pytube.{stream.subtype}"
+            file_path = stream.download(output_path=self.download_folder, filename=target_filename)
+            
+            return {
+                'success': True,
+                'title': yt.title,
+                'file_path': os.path.relpath(file_path, os.getcwd()),
+                'file_size': round(os.path.getsize(file_path) / (1024 * 1024), 2),
+                'mime_type': stream.mime_type
+            }
+        except Exception as e:
+            logger.error(f"pytubefix error: {str(e)}")
+            return {'success': False}
 
     def _emergency_fallback_download(self, video_id: str) -> Dict:
-        """Final attempt to download using minimal options"""
         try:
-            logger.info(f"Running emergency fallback for {video_id}")
             url = f"https://www.youtube.com/watch?v={video_id}"
             output_template = os.path.join(self.download_folder, f"fallback_{video_id}.%(ext)s")
-            
-            ydl_opts = {
-                'format': 'best',
-                'outtmpl': output_template,
-                'noplaylist': True,
-                'ignoreerrors': True,
-            }
+            ydl_opts = {'format': 'best', 'outtmpl': output_template, 'noplaylist': True, 'ignoreerrors': True}
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
+                if not info: return {'success': False, 'error': "All strategies failed"}
                 filename = ydl.prepare_filename(info)
-                
                 if os.path.exists(filename):
                     return {
                         'success': True,
@@ -171,7 +203,7 @@ class DownloadService:
                         'file_size': round(os.path.getsize(filename) / (1024 * 1024), 2),
                         'mime_type': filename.rsplit('.', 1)[-1]
                     }
-            return {'success': False, 'error': "All download strategies failed"}
+            return {'success': False, 'error': "All strategies failed"}
         except Exception as e:
             return {'success': False, 'error': str(e)}
 
