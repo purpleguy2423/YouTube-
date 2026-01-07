@@ -30,7 +30,8 @@ class DownloadService:
                 'cookiefile': self.cookies_path if os.path.exists(self.cookies_path) else None,
                 'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'nocheckcertificate': True,
-                'remote_components': 'ejs:github',
+                'remote_components': ['ejs:github'],
+                'extractor_args': {'youtube': {'player_client': ['web', 'web_embedded']}},
             }
             url = f"https://www.youtube.com/watch?v={video_id}"
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -85,7 +86,7 @@ class DownloadService:
             logger.error(f"Error getting info for {video_id}: {str(e)}")
             try:
                 url = f"https://www.youtube.com/watch?v={video_id}"
-                yt = YouTube(url, use_oauth=True, allow_oauth_cache=True)
+                yt = YouTube(url)
                 return {
                     'success': True,
                     'title': yt.title,
@@ -99,7 +100,7 @@ class DownloadService:
                 return {'success': False, 'error': str(e)}
 
     def download_video(self, video_id: str, itag: str) -> Dict:
-        """Attempt download using yt-dlp, falling back to pytubefix if needed"""
+        """Attempt download using yt-dlp with strict web client strategy"""
         url = f"https://www.youtube.com/watch?v={video_id}"
         
         # Try yt-dlp first
@@ -113,7 +114,7 @@ class DownloadService:
         if result['success']:
             return result
             
-        # Final yt-dlp attempt with minimal constraints
+        # Emergency last ditch effort
         return self._emergency_fallback_download(video_id)
 
     def _download_with_ytdlp(self, video_id: str, itag: str, url: str) -> Dict:
@@ -130,8 +131,9 @@ class DownloadService:
                 'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'nocheckcertificate': True,
                 'ignoreerrors': True,
-                'remote_components': 'ejs:github',
-                'extractor_args': {'youtube': {'player_client': ['android', 'web']}},
+                'remote_components': ['ejs:github'],
+                # Strictly use web clients to bypass current PO Token requirements on mobile clients
+                'extractor_args': {'youtube': {'player_client': ['web', 'web_embedded']}},
             }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -161,7 +163,8 @@ class DownloadService:
 
     def _download_with_pytubefix(self, video_id: str, itag: str, url: str) -> Dict:
         try:
-            yt = YouTube(url, use_oauth=True, allow_oauth_cache=True)
+            # Strictly NO OAuth to avoid blocking UI with device codes
+            yt = YouTube(url, use_oauth=False)
             stream = None
             if itag and itag.isdigit():
                 stream = yt.streams.get_by_id(int(itag))
@@ -185,6 +188,7 @@ class DownloadService:
             return {'success': False}
 
     def _emergency_fallback_download(self, video_id: str) -> Dict:
+        """Final attempt using minimal yt-dlp options and web client"""
         try:
             url = f"https://www.youtube.com/watch?v={video_id}"
             output_template = os.path.join(self.download_folder, f"fallback_{video_id}.%(ext)s")
@@ -193,8 +197,7 @@ class DownloadService:
                 'outtmpl': output_template, 
                 'noplaylist': True, 
                 'ignoreerrors': True,
-                'remote_components': 'ejs:github',
-                'extractor_args': {'youtube': {'player_client': ['android', 'ios', 'web']}},
+                'extractor_args': {'youtube': {'player_client': ['web']}},
             }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
