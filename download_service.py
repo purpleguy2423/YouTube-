@@ -27,11 +27,11 @@ class DownloadService:
                 'quiet': True,
                 'no_warnings': True,
                 'extract_flat': False,
-                'cookiefile': self.cookies_path if os.path.exists(self.cookies_path) else None,
+                'cookiefile': self.cookies_path if os.path.exists(self.cookies_path) and os.path.getsize(self.cookies_path) > 30 else None,
                 'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'nocheckcertificate': True,
                 'remote_components': ['ejs:github'],
-                'extractor_args': {'youtube': {'player_client': ['web', 'web_embedded']}},
+                'extractor_args': {'youtube': {'player_client': ['web', 'mweb', 'tv', 'web_embedded']}},
             }
             url = f"https://www.youtube.com/watch?v={video_id}"
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -127,13 +127,13 @@ class DownloadService:
                 'no_warnings': True,
                 'merge_output_format': 'mp4',
                 'noplaylist': True,
-                'cookiefile': self.cookies_path if os.path.exists(self.cookies_path) else None,
+                'cookiefile': self.cookies_path if os.path.exists(self.cookies_path) and os.path.getsize(self.cookies_path) > 30 else None,
                 'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'nocheckcertificate': True,
                 'ignoreerrors': True,
                 'remote_components': ['ejs:github'],
-                # Strictly use web clients to bypass current PO Token requirements on mobile clients
-                'extractor_args': {'youtube': {'player_client': ['web', 'web_embedded']}},
+                # Broaden client options to find one that doesn't trigger bot detection
+                'extractor_args': {'youtube': {'player_client': ['web', 'mweb', 'tv', 'web_embedded']}},
             }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -163,7 +163,7 @@ class DownloadService:
 
     def _download_with_pytubefix(self, video_id: str, itag: str, url: str) -> Dict:
         try:
-            # Strictly NO OAuth to avoid blocking UI with device codes
+            # Attempt download without OAuth first to avoid device code prompts in a headless environment
             yt = YouTube(url, use_oauth=False)
             stream = None
             if itag and itag.isdigit():
@@ -188,7 +188,7 @@ class DownloadService:
             return {'success': False}
 
     def _emergency_fallback_download(self, video_id: str) -> Dict:
-        """Final attempt using minimal yt-dlp options and web client"""
+        """Final attempt using minimal yt-dlp options and a diverse client set"""
         try:
             url = f"https://www.youtube.com/watch?v={video_id}"
             output_template = os.path.join(self.download_folder, f"fallback_{video_id}.%(ext)s")
@@ -197,7 +197,7 @@ class DownloadService:
                 'outtmpl': output_template, 
                 'noplaylist': True, 
                 'ignoreerrors': True,
-                'extractor_args': {'youtube': {'player_client': ['web']}},
+                'extractor_args': {'youtube': {'player_client': ['tv', 'mweb', 'web']}},
             }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
