@@ -1,0 +1,47 @@
+ARNING: [youtube] [jsc] Remote components challenge solver script (deno) and NPM package (deno) were skipped. These may be required to solve JS challenges. You can enable these downloads with  --remote-components ejs:github  (recommended) or  --remote-components ejs:npm , respectively. For more information and alternatives, refer to  https://github.com/yt-dlp/yt-dlp/wiki/EJS
+WARNING: [youtube] VGk7GKTAF0c: n challenge solving failed: Some formats may be missing. Ensure you have a supported JavaScript runtime and challenge solver script distribution installed. Review any warnings presented before this message. For more details, refer to  https://github.com/yt-dlp/yt-dlp/wiki/EJS
+[info] VGk7GKTAF0c: Downloading 1 format(s): 139
+ERROR: unable to download video data: HTTP Error 403: Forbidden
+WARNING:app:Itag download failed for VGk7GKTAF0c, trying direct download
+ERROR: unable to download video data: HTTP Error 403: Forbidden
+WARNING:download_service:yt-dlp failed for VGk7GKTAF0c, trying pytubefix
+DEBUG:pytubefix.helpers:matched regex search: (?:v=|\/)([0-9A-Za-z_-]{11}).*
+DEBUG:pytubefix.__main__:Looking for visitorData in InnerTube API
+DEBUG:pytubefix.__main__:VisitorData obtained successfully
+DEBUG:pytubefix.extract:applying descrambler
+DEBUG:pytubefix.__main__:Found title in vid_info
+DEBUG:pytubefix.streams:downloading (78993487 total bytes) file to /home/runner/workspace/static/downloads/VGk7GKTAF0c_pytube.mp4
+ERROR:download_service:pytubefix error: HTTP Error 403: Forbidden
+[youtube] Extracting URL: https://www.youtube.com/watch?v=VGk7GKTAF0c
+[youtube] VGk7GKTAF0c: Downloading webpage
+[youtube] VGk7GKTAF0c: Downloading tv client config
+[youtube] VGk7GKTAF0c: Downloading player 721caf0b-main
+[youtube] VGk7GKTAF0c: Downloading tv player API JSON
+[youtube] VGk7GKTAF0c: Downloading android sdkless player API JSON
+[youtube] [jsc:deno] Solving JS challenges using deno
+WARNING: [youtube] [jsc] Remote components challenge solver script (deno) and NPM package (deno) were skipped. These may be required to solve JS challenges. You can enable these downloads with  --remote-components ejs:github  (recommended) or  --remote-components ejs:npm , respectively. For more information and alternatives, refer to  https://github.com/yt-dlp/yt-dlp/wiki/EJS
+WARNING: [youtube] VGk7GKTAF0c: n challenge solving failed: Some formats may be missing. Ensure you have a supported JavaScript runtime and challenge solver script distribution installed. Review any warnings presented before this message. For more details, refer to  https://github.com/yt-dlp/yt-dlp/wiki/EJS
+[info] VGk7GKTAF0c: Downloading 1 format(s): 139
+ERROR: unable to download video data: HTTP Error 403: Forbidden
+WARNING:app:Direct download failed for VGk7GKTAF0c, trying format-specific download
+ERROR: unable to download video data: HTTP Error 403: Forbidden
+WARNING:download_service:yt-dlp failed for VGk7GKTAF0c, trying pytubefix
+DEBUG:pytubefix.helpers:matched regex search: (?:v=|\/)([0-9A-Za-z_-]{11}).*
+DEBUG:pytubefix.__main__:Looking for visitorData in InnerTube API
+DEBUG:pytubefix.__main__:VisitorData obtained successfully
+DEBUG:pytubefix.extract:applying descrambler
+DEBUG:pytubefix.__main__:Found title in vid_info
+DEBUG:pytubefix.streams:downloading (78993487 total bytes) file to /home/runner/workspace/static/downloads/VGk7GKTAF0c_pytube.mp4
+ERROR:download_service:pytubefix error: HTTP Error 403: Forbidden
+[youtube] Extracting URL: https://www.youtube.com/watch?v=VGk7GKTAF0c
+[youtube] VGk7GKTAF0c: Downloading webpage
+[youtube] VGk7GKTAF0c: Downloading tv client config
+[youtube] VGk7GKTAF0c: Downloading player c80790c5-main
+[youtube] VGk7GKTAF0c: Downloading tv player API JSON
+[youtube] VGk7GKTAF0c: Downloading android sdkless player API JSON
+WARNING: [youtube] VGk7GKTAF0c: Some tv client https formats have been skipped as they are missing a url. YouTube may have enabled the SABR-only or Server-Side Ad Placement experiment for the current session. See  https://github.com/yt-dlp/yt-dlp/issues/12482  for more details
+[youtube] [jsc:deno] Solving JS challenges using deno
+WARNING: [youtube] [jsc] Remote components challenge solver script (deno) and NPM package (deno) were skipped. These may be required to solve JS challenges. You can enable these downloads with  --remote-components ejs:github  (recommended) or  --remote-components ejs:npm , respectively. For more information and alternatives, refer to  https://github.com/yt-dlp/yt-dlp/wiki/EJS
+WARNING: [youtube] VGk7GKTAF0c: n challenge solving failed: Some formats may be missing. Ensure you have a supported JavaScript runtime and challenge solver script distribution installed. Review any warnings presented before this message. For more details, refer to  https://github.com/yt-dlp/yt-dlp/wiki/EJS
+WARNING: [youtube] VGk7GKTAF0c: Some web client https formats have been skipped as they are missing a url. YouTube is forcing SABR streaming for this client. See  https://github.com/yt-dlp/yt-dlp/issues/12482  for more details
+ERROR: [youtube] VGk7GKTAF0c: Requested format is not available. Use --list-formats for a list of available formats

@@ -30,6 +30,7 @@ class DownloadService:
                 'cookiefile': self.cookies_path if os.path.exists(self.cookies_path) else None,
                 'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'nocheckcertificate': True,
+                'remote_components': 'ejs:github',
             }
             url = f"https://www.youtube.com/watch?v={video_id}"
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -68,7 +69,6 @@ class DownloadService:
                             'format_name': f"{f.get('format_note') or 'Audio'} ({bitrate})"
                         })
 
-                # Fix sorting
                 video_streams.sort(key=lambda x: int(x['resolution'].replace('p', '')) if x['resolution'].replace('p', '').isdigit() else 0, reverse=True)
                 audio_streams.sort(key=lambda x: int(x['abr'].replace('kbps', '')) if x['abr'].replace('kbps', '').isdigit() else 0, reverse=True)
 
@@ -83,10 +83,9 @@ class DownloadService:
                 }
         except Exception as e:
             logger.error(f"Error getting info for {video_id}: {str(e)}")
-            # Fallback to pytubefix for metadata if yt-dlp fails
             try:
                 url = f"https://www.youtube.com/watch?v={video_id}"
-                yt = YouTube(url)
+                yt = YouTube(url, use_oauth=True, allow_oauth_cache=True)
                 return {
                     'success': True,
                     'title': yt.title,
@@ -114,7 +113,7 @@ class DownloadService:
         if result['success']:
             return result
             
-        # Emergency fallback
+        # Final yt-dlp attempt with minimal constraints
         return self._emergency_fallback_download(video_id)
 
     def _download_with_ytdlp(self, video_id: str, itag: str, url: str) -> Dict:
@@ -131,6 +130,8 @@ class DownloadService:
                 'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'nocheckcertificate': True,
                 'ignoreerrors': True,
+                'remote_components': 'ejs:github',
+                'extractor_args': {'youtube': {'player_client': ['android', 'web']}},
             }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -160,8 +161,7 @@ class DownloadService:
 
     def _download_with_pytubefix(self, video_id: str, itag: str, url: str) -> Dict:
         try:
-            yt = YouTube(url)
-            # Try specific itag, then highest res
+            yt = YouTube(url, use_oauth=True, allow_oauth_cache=True)
             stream = None
             if itag and itag.isdigit():
                 stream = yt.streams.get_by_id(int(itag))
@@ -170,7 +170,6 @@ class DownloadService:
             
             if not stream: return {'success': False}
             
-            # Use fixed filename to avoid issues with special characters
             target_filename = f"{video_id}_pytube.{stream.subtype}"
             file_path = stream.download(output_path=self.download_folder, filename=target_filename)
             
@@ -189,7 +188,14 @@ class DownloadService:
         try:
             url = f"https://www.youtube.com/watch?v={video_id}"
             output_template = os.path.join(self.download_folder, f"fallback_{video_id}.%(ext)s")
-            ydl_opts = {'format': 'best', 'outtmpl': output_template, 'noplaylist': True, 'ignoreerrors': True}
+            ydl_opts = {
+                'format': 'best', 
+                'outtmpl': output_template, 
+                'noplaylist': True, 
+                'ignoreerrors': True,
+                'remote_components': 'ejs:github',
+                'extractor_args': {'youtube': {'player_client': ['android', 'ios', 'web']}},
+            }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
