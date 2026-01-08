@@ -1,5 +1,6 @@
 {pkgs}: {
   deps = [
+    pkgs.haskellPackages.haskell-ffprobe
     pkgs.deno
     pkgs.ffmpeg
     pkgs.python312Packages.types-urllib3
