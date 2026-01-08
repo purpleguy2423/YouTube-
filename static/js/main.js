@@ -96,7 +96,15 @@ function openDownloadModal(videoId) {
     
     // Fetch download options from server
     fetch(`/video/download-options/${videoId}`)
-        .then(response => response.json())
+        .then(async response => {
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                const text = await response.text();
+                console.error("Expected JSON but got:", text.substring(0, 100));
+                throw new Error("Server returned an invalid response (HTML instead of JSON). Please try again later.");
+            }
+            return response.json();
+        })
         .then(data => {
             // Hide loading indicator
             downloadLoading.classList.add('d-none');
@@ -200,7 +208,15 @@ function downloadStream(videoId, itag) {
     
     // Start download
     fetch(`/video/download/${videoId}?itag=${itag}`)
-        .then(response => response.json())
+        .then(async response => {
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                const text = await response.text();
+                console.error("Expected JSON but got:", text.substring(0, 100));
+                throw new Error("Server returned an invalid response (HTML instead of JSON). Please try again later.");
+            }
+            return response.json();
+        })
         .then(data => {
             // Hide loading
             downloadLoading.classList.add('d-none');
@@ -279,9 +295,18 @@ function saveVideo(videoId, title, thumbnail) {
         body: JSON.stringify({
             title: title,
             thumbnail: thumbnail,
+            video_id: videoId
         }),
     })
-    .then(response => response.json())
+    .then(async response => {
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            const text = await response.text();
+            console.error("Expected JSON but got:", text.substring(0, 100));
+            throw new Error("Server returned an invalid response.");
+        }
+        return response.json();
+    })
     .then(data => {
         // Create toast notification
         const toastEl = document.createElement('div');
@@ -568,12 +593,19 @@ document.addEventListener('DOMContentLoaded', function() {
             videoPlayer.classList.add('d-none');
         }
 
-        try {
-            const response = await fetch(`/search?q=${encodeURIComponent(query)}&type=${currentSearchType}`);
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Search failed');
+    fetch(`/search?q=${encodeURIComponent(query)}&type=${currentSearchType}`)
+        .then(async response => {
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                const text = await response.text();
+                console.error("Expected JSON but got:", text.substring(0, 100));
+                throw new Error("Server returned an invalid response (HTML instead of JSON). Please try again later.");
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data) {
+                throw new Error('Search failed: No data received');
             }
 
             if (data.search_type === 'channels' && data.channels) {
