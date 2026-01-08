@@ -31,7 +31,8 @@ class DownloadService:
                 'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'nocheckcertificate': True,
                 'remote_components': ['ejs:github'],
-                'extractor_args': {'youtube': {'player_client': ['web', 'mweb', 'tv', 'web_embedded']}},
+                # Prioritize android/tv clients which often bypass bot detection
+                'extractor_args': {'youtube': {'player_client': ['android', 'ios', 'tv', 'web', 'mweb']}},
             }
             url = f"https://www.youtube.com/watch?v={video_id}"
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -70,6 +71,7 @@ class DownloadService:
                             'format_name': f"{f.get('format_note') or 'Audio'} ({bitrate})"
                         })
 
+                # Sort by resolution/bitrate
                 video_streams.sort(key=lambda x: int(x['resolution'].replace('p', '')) if x['resolution'].replace('p', '').isdigit() else 0, reverse=True)
                 audio_streams.sort(key=lambda x: int(x['abr'].replace('kbps', '')) if x['abr'].replace('kbps', '').isdigit() else 0, reverse=True)
 
@@ -100,7 +102,7 @@ class DownloadService:
                 return {'success': False, 'error': str(e)}
 
     def download_video(self, video_id: str, itag: str) -> Dict:
-        """Attempt download using yt-dlp with strict web client strategy"""
+        """Attempt download using yt-dlp with optimized bot-bypass settings"""
         url = f"https://www.youtube.com/watch?v={video_id}"
         
         # Try yt-dlp first
@@ -132,8 +134,8 @@ class DownloadService:
                 'nocheckcertificate': True,
                 'ignoreerrors': True,
                 'remote_components': ['ejs:github'],
-                # Broaden client options to find one that doesn't trigger bot detection
-                'extractor_args': {'youtube': {'player_client': ['web', 'mweb', 'tv', 'web_embedded']}},
+                # Diverse client set to bypass "not a bot" check
+                'extractor_args': {'youtube': {'player_client': ['android', 'ios', 'tv', 'web', 'mweb']}},
             }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -163,8 +165,8 @@ class DownloadService:
 
     def _download_with_pytubefix(self, video_id: str, itag: str, url: str) -> Dict:
         try:
-            # Attempt download without OAuth first to avoid device code prompts in a headless environment
-            yt = YouTube(url, use_oauth=False)
+            # Use specific clients in pytubefix if available
+            yt = YouTube(url, use_oauth=False, client='WEB')
             stream = None
             if itag and itag.isdigit():
                 stream = yt.streams.get_by_id(int(itag))
@@ -192,17 +194,18 @@ class DownloadService:
         try:
             url = f"https://www.youtube.com/watch?v={video_id}"
             output_template = os.path.join(self.download_folder, f"fallback_{video_id}.%(ext)s")
+            # Minimal options, forcing specific non-browser clients
             ydl_opts = {
                 'format': 'best', 
                 'outtmpl': output_template, 
                 'noplaylist': True, 
                 'ignoreerrors': True,
-                'extractor_args': {'youtube': {'player_client': ['tv', 'mweb', 'web']}},
+                'extractor_args': {'youtube': {'player_client': ['tv', 'mweb', 'web_embedded']}},
             }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
-                if not info: return {'success': False, 'error': "All strategies failed"}
+                if not info: return {'success': False, 'error': "All bypass strategies failed"}
                 filename = ydl.prepare_filename(info)
                 if os.path.exists(filename):
                     return {
@@ -212,7 +215,7 @@ class DownloadService:
                         'file_size': round(os.path.getsize(filename) / (1024 * 1024), 2),
                         'mime_type': filename.rsplit('.', 1)[-1]
                     }
-            return {'success': False, 'error': "All strategies failed"}
+            return {'success': False, 'error': "All bypass strategies failed"}
         except Exception as e:
             return {'success': False, 'error': str(e)}
 
