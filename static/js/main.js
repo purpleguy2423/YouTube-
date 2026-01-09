@@ -593,17 +593,18 @@ document.addEventListener('DOMContentLoaded', function() {
             videoPlayer.classList.add('d-none');
         }
 
-    fetch(`/search?q=${encodeURIComponent(query)}&type=${currentSearchType}`)
-        .then(async response => {
+        try {
+            const response = await fetch(`/search?q=${encodeURIComponent(query)}&type=${currentSearchType}`);
             const contentType = response.headers.get("content-type");
+            
             if (!contentType || !contentType.includes("application/json")) {
                 const text = await response.text();
                 console.error("Expected JSON but got:", text.substring(0, 100));
                 throw new Error("Server returned an invalid response (HTML instead of JSON). Please try again later.");
             }
-            return response.json();
-        })
-        .then(data => {
+            
+            const data = await response.json();
+            
             if (!data) {
                 throw new Error('Search failed: No data received');
             }
