@@ -169,6 +169,40 @@ def channel(channel_id=None):
         logger.error(f"Channel fetch error: {str(e)}")
         return render_template('error.html', error="Failed to fetch channel data"), 500
 
+from flask import Flask, render_template, request, jsonify, send_from_directory, redirect, url_for, flash, Response, stream_with_context
+# ... imports ...
+@app.route('/video/stream/<video_id>')
+def stream_video(video_id):
+    """Proxy the video stream from YouTube through our server"""
+    try:
+        import yt_dlp
+        ydl_opts = {
+            'format': 'best[ext=mp4]/best',
+            'quiet': True,
+            'no_warnings': True,
+            'cookiefile': download_service.cookies_path if os.path.exists(download_service.cookies_path) else None,
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
+            url = info.get('url')
+            if not url:
+                return "Could not find stream URL", 404
+            
+            # Use requests to stream the content
+            req = requests.get(url, stream=True)
+            
+            def generate():
+                for chunk in req.iter_content(chunk_size=8192):
+                    yield chunk
+                    
+            return Response(stream_with_context(generate()), 
+                            content_type=req.headers.get('content-type'),
+                            headers={key: value for key, value in req.headers.items() 
+                                     if key.lower() in ['content-length', 'accept-ranges', 'content-range']})
+    except Exception as e:
+        logger.error(f"Streaming error: {str(e)}")
+        return str(e), 500
+
 @app.errorhandler(404)
 def not_found_error(error):
     return render_template('error.html', error="Page not found"), 404
