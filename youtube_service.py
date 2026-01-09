@@ -20,12 +20,24 @@ class YouTubeService:
 
     def _extract_video_id(self, html_content):
         logger.debug("Starting video information extraction")
+        # Try to find the ytInitialData JSON object which contains structured data
+        try:
+            json_data_match = re.search(r'var ytInitialData = ({.*?});', html_content)
+            if json_data_match:
+                import json
+                data = json.loads(json_data_match.group(1))
+                # This is a complex structure, but often results are in:
+                # contents.twoColumnSearchResultsRenderer.primaryContents.sectionListRenderer.contents[0].itemSectionRenderer.contents
+                # For simplicity and robustness, we'll stick to regex if JSON parsing is too specific, 
+                # but we can improve regex patterns.
+        except Exception as e:
+            logger.debug(f"JSON extraction failed: {e}")
+
         # Enhanced patterns for better metadata extraction
         patterns = {
             'video_id': r'\"videoId\":\"([^\"]{11})\"',
             'title': r'\"title\":\{\"runs\":\[\{\"text\":\"([^\"]+?)\"\}\]',
             'channel': r'\"ownerText\":\{\"runs\":\[\{\"text\":\"([^\"]+?)\"',
-            # Enhanced channel ID pattern to catch more formats
             'channel_id': r'\"channelId\":\"([^\"]+?)\"',
             'views': r'\"viewCountText\":\{\"simpleText\":\"([^\"]+?)\"',
             'duration': r'\"lengthText\":\{\"simpleText\":\"([^\"]+?)\"',

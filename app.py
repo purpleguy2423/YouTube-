@@ -120,15 +120,21 @@ def search():
             if search_type == 'videos':
                 for video in results.get('results', []):
                     try:
-                        db_video = Video(
-                            id=video['id'],
-                            title=video['title'],
-                            thumbnail_url=video['thumbnail'],
-                            search_query=search_history
-                        )
-                        db.session.add(db_video)
+                        # Check if video already exists to avoid duplicate entries
+                        existing_video = Video.query.get(video['id'])
+                        if not existing_video:
+                            db_video = Video(
+                                id=video['id'],
+                                title=video['title'],
+                                thumbnail_url=video['thumbnail'],
+                                search_query_id=search_history.id
+                            )
+                            db.session.add(db_video)
+                        else:
+                            # Update existing video's search query association
+                            existing_video.search_query_id = search_history.id
                     except Exception as video_error:
-                        logger.warning(f"Skipping duplicate video {video['id']}: {str(video_error)}")
+                        logger.warning(f"Skipping video {video['id']}: {str(video_error)}")
                         continue
 
             db.session.commit()
