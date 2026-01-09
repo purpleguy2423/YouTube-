@@ -615,11 +615,13 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 showError('No results found for your search.');
             }
-        } catch (error) {
+        })
+        .catch(error => {
             showError(error.message);
-        } finally {
+        })
+        .finally(() => {
             hideLoading();
-        }
+        });
     });
 
     // Display search results with enhanced channel information
