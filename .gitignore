@@ -1,0 +1,14 @@
+# Downloads directory
+static/downloads/*
+!static/downloads/.gitkeep
+
+# Other temporary files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.db
+instance/
+.env
+cookies.txt
+*.log
