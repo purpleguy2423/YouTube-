@@ -118,11 +118,11 @@ def search():
         search_cache.set(cache_key, results)
         
         try:
-            search_history = SearchHistory(
-                query=query,
-                results_count=len(results.get('results', [])) if search_type == 'videos' else len(results.get('channels', [])),
-                user_id=current_user.id if current_user.is_authenticated else None
-            )
+            search_history = SearchHistory()
+            search_history.query_column=query
+            search_history.results_count=len(results.get('results', [])) if search_type == 'videos' else len(results.get('channels', []))
+            search_history.user_id=current_user.id if current_user.is_authenticated else None
+            
             db.session.add(search_history)
 
             if search_type == 'videos':
@@ -130,12 +130,11 @@ def search():
                     try:
                         existing_video = Video.query.get(video['id'])
                         if not existing_video:
-                            db_video = Video(
-                                id=video['id'],
-                                title=video['title'],
-                                thumbnail_url=video['thumbnail'],
-                                search_query_id=search_history.id
-                            )
+                            db_video = Video()
+                            db_video.id=video['id']
+                            db_video.title=video['title']
+                            db_video.thumbnail_url=video['thumbnail']
+                            db_video.search_query_id=search_history.id
                             db.session.add(db_video)
                         else:
                             existing_video.search_query_id = search_history.id
@@ -300,7 +299,9 @@ def register():
         return redirect(url_for('index'))
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = User(username=form.username.data, email=form.email.data)
+        user = User()
+        user.username=form.username.data
+        user.email=form.email.data
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
@@ -330,7 +331,7 @@ def search_history():
     user_searches = SearchHistory.query.filter_by(user_id=current_user.id).order_by(SearchHistory.timestamp.desc()).all()
     popular_searches = SearchHistory.query.filter(
         (SearchHistory.user_id != current_user.id) | (SearchHistory.user_id.is_(None))
-    ).group_by(SearchHistory.query).order_by(db.func.count(SearchHistory.id).desc()).limit(10).all()
+    ).group_by(SearchHistory.query_column).order_by(db.func.count(SearchHistory.id).desc()).limit(10).all()
     return render_template('search_history.html', user_searches=user_searches, popular_searches=popular_searches)
 
 @app.route('/clear-search-history', methods=['POST'])
@@ -368,21 +369,19 @@ def save_video(video_id):
         video_data = request.get_json()
         video = Video.query.get(video_id)
         if not video:
-            video = Video(
-                id=video_id,
-                title=video_data.get('title', 'Unknown Title'),
-                thumbnail_url=video_data.get('thumbnail', '')
-            )
+            video = Video()
+            video.id=video_id
+            video.title=video_data.get('title', 'Unknown Title')
+            video.thumbnail_url=video_data.get('thumbnail', '')
             db.session.add(video)
             db.session.flush()
         existing = UserVideo.query.filter_by(user_id=current_user.id, video_id=video_id).first()
         if not existing:
-            user_video = UserVideo(
-                user_id=current_user.id,
-                video_id=video_id,
-                custom_title=video_data.get('custom_title', video.title),
-                notes=video_data.get('notes', '')
-            )
+            user_video = UserVideo()
+            user_video.user_id=current_user.id
+            user_video.video_id=video_id
+            user_video.custom_title=video_data.get('custom_title', video.title)
+            user_video.notes=video_data.get('notes', '')
             if video_data.get('downloaded'):
                 user_video.downloaded = True
                 user_video.download_date = datetime.utcnow()

@@ -24,7 +24,7 @@ class User(UserMixin, db.Model):
 
 class SearchHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    query = db.Column(db.String(200), nullable=False)
+    query_column = db.Column('query', db.String(200), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     results_count = db.Column(db.Integer)
     
