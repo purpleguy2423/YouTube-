@@ -40,7 +40,8 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 # Initialize extensions
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
-login_manager.login_view = 'login'
+# Fix for LSP error: login_view can be a string
+login_manager.login_view = 'login'  # type: ignore
 login_manager.login_message = 'Please log in to access this page.'
 login_manager.session_protection = "strong"
 
@@ -194,19 +195,22 @@ def stream_video(video_id):
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
         range_header = request.headers.get('Range')
-        if range_header:
+        if range_header and req and req.headers:
             headers['Range'] = range_header
             
         req = requests.get(url, headers=headers, stream=True, timeout=15)
         
-        response_headers = {
-            'Accept-Ranges': 'bytes',
-            'Content-Type': req.headers.get('Content-Type', 'video/mp4'),
-        }
-        
-        for h in ['Content-Length', 'Content-Range', 'Accept-Ranges']:
-            if h in req.headers:
-                response_headers[h] = req.headers[h]
+        if req and req.headers:
+            response_headers = {
+                'Accept-Ranges': 'bytes',
+                'Content-Type': req.headers.get('Content-Type', 'video/mp4'),
+            }
+            
+            for h in ['Content-Length', 'Content-Range', 'Accept-Ranges']:
+                if h in req.headers:
+                    response_headers[h] = req.headers[h]
+        else:
+            return "Failed to fetch stream metadata", 500
             
         def generate():
             try:
