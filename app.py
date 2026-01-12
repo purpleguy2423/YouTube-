@@ -1,7 +1,7 @@
 import os
 import logging
 import requests
-from flask import Flask, render_template, request, jsonify, send_from_directory, redirect, url_for, flash, Response, stream_with_context
+from flask import Flask, render_template, request, jsonify, send_from_directory, redirect, url_for, flash, Response, stream_with_context, session
 from werkzeug.middleware.proxy_fix import ProxyFix
 from youtube_service import YouTubeService
 from download_service import DownloadService
@@ -19,6 +19,13 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
+# Set session configuration for cross-device/persistent login
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+    PERMANENT_SESSION_LIFETIME=31536000,  # 1 year in seconds
+)
 # Replit handles HTTPS termination, standard ProxyFix is usually enough
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
@@ -35,6 +42,12 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Please log in to access this page.'
+login_manager.session_protection = "strong"
+
+@app.before_request
+def make_session_permanent():
+    app.permanent_session_lifetime = 31536000  # 1 year
+    session.permanent = True
 
 # Initialize services
 youtube_service = YouTubeService()
